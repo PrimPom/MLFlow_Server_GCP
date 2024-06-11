@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      REGION: us-central1                    # edit here
+      REGION: us-central1                      # edit here
       PROJECT_ID: projet-test-424016             # edit here
       REPOSITORY: mlflow-artifacts  # edit here
       SERVICE_ACCOUNT: mlflow-server-service@projet-test-424016.iam.gserviceaccount.com   # edit here
