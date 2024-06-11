@@ -16,7 +16,7 @@ jobs:
       PROJECT_ID: projet-test-424016             # edit here
       REPOSITORY: mlflow-artifacts  # edit here
       SERVICE_ACCOUNT: mlflow-server-service@projet-test-424016.iam.gserviceaccount.com   # edit here
-      SERVICE_NAME: mlflow_server_service         # edit here
+      SERVICE_NAME: vope-mlflow-server         # edit here
 
     steps:
     - name: Checkout
