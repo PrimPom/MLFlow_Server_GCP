@@ -13,7 +13,7 @@ from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 # Define the tracking URI for the MLflow experiment
-TRACKING_URI = "YOUR-URI-FROM-CLOUD-RUN"
+TRACKING_URI = "https://vope-mlflow-server-4aqlzfis2a-uc.a.run.app"
 
 # Read the wine-quality dataset from a CSV file
 csv_url = "https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-red.csv"
@@ -96,6 +96,9 @@ with mlflow.start_run(
     mlflow.log_metric("rmse", rmse)
     mlflow.log_metric("r2", r2)
     mlflow.log_metric("mae", mae)
+
+    # LOg images
+    mlflow.log_image()
     
     # Log model:
     signature = infer_signature(train_x, predictions)
