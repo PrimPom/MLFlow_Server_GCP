@@ -4,6 +4,8 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import google.oauth2
+
 
 import mlflow
 from mlflow.models import infer_signature
@@ -12,8 +14,71 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
+
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
+import requests
+import os
+
+
+credential_path = "private.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
+
+def make_iap_request(url, client_id, method="GET", **kwargs):
+    """Makes a request to an application protected by Identity-Aware Proxy.
+
+    Args:
+      url: The Identity-Aware Proxy-protected URL to fetch.
+      client_id: The client ID used by Identity-Aware Proxy.
+      method: The request method to use
+              ('GET', 'OPTIONS', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE')
+      **kwargs: Any of the parameters defined for the request function:
+                https://github.com/requests/requests/blob/master/requests/api.py
+                If no timeout is provided, it is set to 90 by default.
+
+    Returns:
+      The page body, or raises an exception if the page couldn't be retrieved.
+    """
+    # Set the default timeout, if missing
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = 90
+
+    # Obtain an OpenID Connect (OIDC) token from metadata server or using service
+    # account.
+    open_id_connect_token = id_token.fetch_id_token(Request(), client_id)
+
+    # Fetch the Identity-Aware Proxy-protected URL, including an
+    # Authorization header containing "Bearer " followed by a
+    # Google-issued OpenID Connect token for the service account.
+    resp = requests.request(
+        method,
+        url,
+        headers={"Authorization": "Bearer {}".format(open_id_connect_token)},
+        **kwargs
+    )
+    if resp.status_code == 403:
+        raise Exception(
+            "Service account does not have permission to "
+            "access the IAP-protected application."
+        )
+    elif resp.status_code != 200:
+        raise Exception(
+            "Bad response from application: {!r} / {!r} / {!r}".format(
+                resp.status_code, resp.headers, resp.text
+            )
+        )
+    else:
+        return resp.text
+
+
+response = make_iap_request(url="https://mlflow.manipai.dev", client_id="953272985429-8mbakf4goo5d0j18qe08nvuq90mt0908.apps.googleusercontent.com", method="GET")
+print(response)
+
+
+
+
 # Define the tracking URI for the MLflow experiment
-TRACKING_URI = "https://vope-mlflow-server-4aqlzfis2a-uc.a.run.app"
+TRACKING_URI = "https://mlflow.manipai.dev"
 
 # Read the wine-quality dataset from a CSV file
 csv_url = "https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-red.csv"
@@ -57,12 +122,71 @@ print(f"Elasticnet model (alpha={alpha:f}, l1_ratio={l1_ratio:f}, random_state={
 print(f"RMSE: {rmse}")
 print(f"MAE: {mae}")
 print(f"R2: {r2}")
+from google.auth.transport.requests import Request
+from google.oauth2 import id_token
+import requests
+import os
+
+
+credential_path = "private.json"
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
+
+def make_iap_request(url, client_id, method="GET", **kwargs):
+    """Makes a request to an application protected by Identity-Aware Proxy.
+
+    Args:
+      url: The Identity-Aware Proxy-protected URL to fetch.
+      client_id: The client ID used by Identity-Aware Proxy.
+      method: The request method to use
+              ('GET', 'OPTIONS', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE')
+      **kwargs: Any of the parameters defined for the request function:
+                https://github.com/requests/requests/blob/master/requests/api.py
+                If no timeout is provided, it is set to 90 by default.
+
+    Returns:
+      The page body, or raises an exception if the page couldn't be retrieved.
+    """
+    # Set the default timeout, if missing
+    if "timeout" not in kwargs:
+        kwargs["timeout"] = 90
+
+    # Obtain an OpenID Connect (OIDC) token from metadata server or using service
+    # account.
+    open_id_connect_token = id_token.fetch_id_token(Request(), client_id)
+
+    # Fetch the Identity-Aware Proxy-protected URL, including an
+    # Authorization header containing "Bearer " followed by a
+    # Google-issued OpenID Connect token for the service account.
+    resp = requests.request(
+        method,
+        url,
+        headers={"Authorization": "Bearer {}".format(open_id_connect_token)},
+        **kwargs
+    )
+    if resp.status_code == 403:
+        raise Exception(
+            "Service account does not have permission to "
+            "access the IAP-protected application."
+        )
+    elif resp.status_code != 200:
+        raise Exception(
+            "Bad response from application: {!r} / {!r} / {!r}".format(
+                resp.status_code, resp.headers, resp.text
+            )
+        )
+    else:
+        return resp.url
+
+
+response = make_iap_request(url="https://mlflow.manipai.dev", client_id="953272985429-8mbakf4goo5d0j18qe08nvuq90mt0908.apps.googleusercontent.com", method="GET")
+
+
 
 # Set the tracking URI for the MLflow experiment
-mlflow.set_tracking_uri(TRACKING_URI)
+mlflow.set_tracking_uri(response)
 
 # Create an experiment if it doesn't exist
-experiment_name = "Test_Experiment"
+experiment_name = "Experiment with auth"
 if not mlflow.get_experiment_by_name(name=experiment_name):
     mlflow.create_experiment(
         name=experiment_name
@@ -98,7 +222,7 @@ with mlflow.start_run(
     mlflow.log_metric("mae", mae)
 
     # LOg images
-    mlflow.log_image()
+
     
     # Log model:
     signature = infer_signature(train_x, predictions)

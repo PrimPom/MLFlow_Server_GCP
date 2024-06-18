@@ -3,7 +3,7 @@
 name: Deploy MLFlow Server
 
 on:
-  push:
+  merge_group:
     branches: [main]
 
 jobs:
